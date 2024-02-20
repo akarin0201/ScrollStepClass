@@ -16,4 +16,6 @@ Define step classes (by default the step class name is *data-ssn-class*-step-*st
 
 ## To do
 
-The script is quite crude and I want to rebuild it & make it easier to configure soon™ 
+1. The script is quite crude and I want to rebuild it & make it easier to configure soon™
+2. Change the script so that the element starts being tracked when it enters the viewport, but is tracked even if it leaves it (the script looses track when user scrolls too fast)
+3. Refactor
