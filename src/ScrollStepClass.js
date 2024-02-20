@@ -46,8 +46,15 @@
             if(this.inViewport) {
                 this.calcScrollDiference(newScrollValue);
                 this.calcCurrentStepValue();
-                this.validateStep();
+                
+                if(this.scrollDifference > 0 && this.currentStep < this.steps) {
+                    this.moveForward();
+                }
+                else if(this.scrollDifference < 0 && this.currentStep > 0) {
+                    this.moveBackwards();
+                }
             }
+            // console.log('%ccurretStepValue: ' + this.currentStepValue, 'color: #ff0');
         }
 
         calcScrollDiference(newScrollValue) {
@@ -56,38 +63,36 @@
         }
 
         calcCurrentStepValue() {
-            this.currentStepValue += Math.abs(this.scrollDifference);
-        }
-
-        validateStep() {
-            if(this.currentStepValue >= this.stepThreshold) {
-                if(this.scrollDifference > 0 && this.currentStep < this.steps) {
-                    this.moveForward();
-                }
-                else if(this.scrollDifference < 0 && this.currentStep > 0) {
-                    this.moveBackwards();
-                }
-            }
+            this.currentStepValue += this.scrollDifference;
         }
 
         moveForward() {
             let lastStep = this.currentStep;
             let mod = this.currentStepValue % this.stepThreshold;
-            let stepsToTake = (this.currentStepValue - mod) / this.stepThreshold;
-            this.currentStep = Math.min((this.currentStep + stepsToTake), this.steps);
-            this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
-            this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
-            this.currentStepValue = mod;
+            let calculatedStep = (this.currentStepValue - mod) / this.stepThreshold;
+            this.currentStep = Math.min(calculatedStep, this.steps);
+            if(this.currentStep > lastStep) {
+                this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
+                this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
+            }
         }
 
         moveBackwards() {
             let lastStep = this.currentStep;
-            let mod = this.currentStepValue % this.stepThreshold;
-            let stepsToTake = (this.currentStepValue - mod) / this.stepThreshold;
-            this.currentStep = Math.max(this.currentStep - stepsToTake, 1);
-            this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
-            this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
-            this.currentStepValue = mod;
+            let absCurrentStepValue = Math.abs(this.currentStepValue);
+            if(absCurrentStepValue < this.stepThreshold) {
+                this.currentStep = 0;
+                this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
+            }
+            else {
+                let mod = absCurrentStepValue % this.stepThreshold;
+                let calculatedStep = (absCurrentStepValue - mod) / this.stepThreshold;
+                this.currentStep = Math.max(calculatedStep, 1);
+                if(this.currentStep < lastStep){
+                    this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
+                    this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
+                } 
+            }
         }
     }
 
