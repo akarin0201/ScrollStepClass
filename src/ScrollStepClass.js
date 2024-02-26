@@ -9,9 +9,9 @@
         steps;
         stepThreshold;
 
-        inViewport;
+        scrollValue;
+        isActive;
         currentStep;
-        currentStepValue;
         scrollDifference;
         lastScrollValue;
         observer;
@@ -24,9 +24,10 @@
                 this.steps = this.node.dataset.ssnSteps;
                 this.stepThreshold = this.node.dataset.ssnThreshold;
                 
-                this.inViewport = false;
+                this.isActive = false;
+                this.scrollValue = 0;
+
                 this.currentStep = 0;
-                this.currentStepValue = 0;
                 this.scrollDifference = 0;
                 this.lastScrollValue = window.scrollY || null;
                 this.observer = new IntersectionObserver(this.validateVisibility.bind(this), {root:null,rootMargin:'0px',threshold:this.settings.detectionThreshold});
@@ -38,61 +39,32 @@
         }
 
         validateVisibility(entries) {
-            if(entries[0].isIntersecting) this.inViewport = true;
-            else this.inViewport = false;
+            if(entries[0].isIntersecting && !this.isActive) {
+                this.isActive = true;
+                this.lastScrollValue = window.scrollY;
+            }
         }
 
         update(newScrollValue) {
-            if(this.inViewport) {
-                this.calcScrollDiference(newScrollValue);
-                this.calcCurrentStepValue();
-                
-                if(this.scrollDifference > 0 && this.currentStep < this.steps) {
-                    this.moveForward();
-                }
-                else if(this.scrollDifference < 0 && this.currentStep > 0) {
-                    this.moveBackwards();
+            if(this.isActive) {
+                this.calcScrollDifference(newScrollValue);
+                this.scrollValue += this.scrollDifference;
+                console.log(this.scrollValue);
+    
+                let newStep = Math.floor(this.scrollValue / this.stepThreshold);
+
+                if(newStep !== this.currentStep && newStep <= this.steps && newStep >= 0) {
+                    this.node.classList.remove(this.stepClass + this.settings.stepSuffix + this.currentStep);
+                    this.currentStep = newStep;
+                    if(this.currentStep > 0)
+                        this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
                 }
             }
-            // console.log('%ccurretStepValue: ' + this.currentStepValue, 'color: #ff0');
         }
 
-        calcScrollDiference(newScrollValue) {
+        calcScrollDifference(newScrollValue) {
             this.scrollDifference = newScrollValue - this.lastScrollValue;
             this.lastScrollValue = newScrollValue;
-        }
-
-        calcCurrentStepValue() {
-            this.currentStepValue += this.scrollDifference;
-        }
-
-        moveForward() {
-            let lastStep = this.currentStep;
-            let mod = this.currentStepValue % this.stepThreshold;
-            let calculatedStep = (this.currentStepValue - mod) / this.stepThreshold;
-            this.currentStep = Math.min(calculatedStep, this.steps);
-            if(this.currentStep > lastStep) {
-                this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
-                this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
-            }
-        }
-
-        moveBackwards() {
-            let lastStep = this.currentStep;
-            let absCurrentStepValue = Math.abs(this.currentStepValue);
-            if(absCurrentStepValue < this.stepThreshold) {
-                this.currentStep = 0;
-                this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
-            }
-            else {
-                let mod = absCurrentStepValue % this.stepThreshold;
-                let calculatedStep = (absCurrentStepValue - mod) / this.stepThreshold;
-                this.currentStep = Math.max(calculatedStep, 1);
-                if(this.currentStep < lastStep){
-                    this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
-                    this.node.classList.remove(this.stepClass + this.settings.stepSuffix + lastStep);
-                } 
-            }
         }
     }
 
@@ -105,7 +77,6 @@
         scrollStepNodes.push(new ScrollStepNode(ssnReadyNodes[i], {}));
 
     window.addEventListener('scroll', () => {
-
         scrollStepNodes.forEach(node => {
             node.update(window.scrollY);
         });
