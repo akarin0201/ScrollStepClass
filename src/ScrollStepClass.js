@@ -1,84 +1,70 @@
 (() => {
-    class ScrollStepNode {
-        settings = {
-            stepSuffix: '-step-',
-            detectionThreshold: 0
-        };
+
+    class SSN {
         node;
         stepClass;
         steps;
         stepThreshold;
-
-        scrollValue;
+        stepSuffix;
         isActive;
         currentStep;
-        scrollDifference;
-        lastScrollValue;
+        startingScrollVal;
         observer;
 
-        constructor(node, settings = {}) {
-            this.node = node || null;
-            if(this.node.nodeType === 1) {
-                this.settings = {...this.settings, ...settings};
-                this.stepClass = this.node.dataset.ssnClass;
-                this.steps = this.node.dataset.ssnSteps;
-                this.stepThreshold = this.node.dataset.ssnThreshold;
-                
-                this.isActive = false;
-                this.scrollValue = 0;
+        constructor(node, suffix = '-step-') {
+            this.node = node;
+            this.stepClass = this.node.dataset.ssnClass;
+            this.steps = this.node.dataset.ssnSteps;
+            this.stepThreshold = this.node.dataset.ssnThreshold;
+            this.stepSuffix = suffix;
+            this.isActive = false;
+            this.currentStep = 0;
+            this.startingScrollVal = 0;
 
-                this.currentStep = 0;
-                this.scrollDifference = 0;
-                this.lastScrollValue = window.scrollY || null;
-                this.observer = new IntersectionObserver(this.validateVisibility.bind(this), {root:null,rootMargin:'0px',threshold:this.settings.detectionThreshold});
-                this.observer.observe(this.node);
-            }
-            else {
-                console.error('%cScrollStepNode: %cErorr! No valid node given!', 'color:#0ff', 'color:#f00');
-            }
+            this.observer = new IntersectionObserver(this.validateVisibility.bind(this), {root:null,rootMargin:'0px',threshold:0});
+            this.observer.observe(this.node);
         }
 
         validateVisibility(entries) {
             if(entries[0].isIntersecting && !this.isActive) {
                 this.isActive = true;
-                this.lastScrollValue = window.scrollY;
+                this.startingScrollVal = window.scrollY;
             }
         }
 
-        update(newScrollValue) {
-            if(this.isActive) {
-                this.calcScrollDifference(newScrollValue);
-                this.scrollValue += this.scrollDifference;
-                console.log(this.scrollValue);
-    
-                let newStep = Math.floor(this.scrollValue / this.stepThreshold);
+        update() {
+            let newStep = Math.floor((window.scrollY - this.startingScrollVal) / this.stepThreshold);
 
-                if(newStep !== this.currentStep && newStep <= this.steps && newStep >= 0) {
-                    this.node.classList.remove(this.stepClass + this.settings.stepSuffix + this.currentStep);
-                    this.currentStep = newStep;
-                    if(this.currentStep > 0)
-                        this.node.classList.add(this.stepClass + this.settings.stepSuffix + this.currentStep);
-                }
+            if(newStep !== this.currentStep && newStep <= this.steps && newStep >= 0) {
+                this.node.classList.remove(this.stepClass + this.stepSuffix + this.currentStep);
+                this.currentStep = newStep;
+                if(this.currentStep > 0)
+                    this.node.classList.add(this.stepClass + this.stepSuffix + this.currentStep);
             }
-        }
-
-        calcScrollDifference(newScrollValue) {
-            this.scrollDifference = newScrollValue - this.lastScrollValue;
-            this.lastScrollValue = newScrollValue;
         }
     }
 
-    let scrollStepNodeClass = 'ssn';
+    class SSCBootstrap {
+        settings = {
+            ssnClassName: 'ssn',
+            stepSuffix: '-step-'
+        }
+        ssnNodes = [];
 
-    const ssnReadyNodes = Array.prototype.slice.call(document.querySelectorAll('.' + scrollStepNodeClass));
+        constructor(settings = {}) {
+            this.settings = {...this.settings, ...settings};
 
-    const scrollStepNodes = [];
-    for(let i = 0; i < ssnReadyNodes.length; i++)
-        scrollStepNodes.push(new ScrollStepNode(ssnReadyNodes[i], {}));
+            [].slice.call(document.querySelectorAll('.' + this.settings.ssnClassName)).forEach(node => {
+                this.ssnNodes.push(new SSN(node, this.settings.stepSuffix));
+            });
 
-    window.addEventListener('scroll', () => {
-        scrollStepNodes.forEach(node => {
-            node.update(window.scrollY);
-        });
-    });
+            window.addEventListener('scroll', () => {
+                this.ssnNodes.forEach(node => {
+                    if(node.isActive) node.update();
+                });
+            })
+        }
+    }
+
+    let SSC = new SSCBootstrap();
 })();
