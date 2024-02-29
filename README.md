@@ -12,9 +12,4 @@ Define step threshold with **data-ssn-threshold** attribute (measured in pixels)
 
 ### In CSS
 
-Define step classes (by default the step class name is *data-ssn-class*-step-*step* for example: *scroll-action-step-1*)
-
-## To do
-
-1. The script is quite crude and I want to rebuild it & make it easier to configure soon™
-2. It also should be optimized
+Define step classes (by default the step class name is *data-ssn-class*-step-*step* for example: *scroll-action-step-1*, it can be changed in js *line 50*)
